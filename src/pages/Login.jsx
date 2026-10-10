@@ -24,14 +24,13 @@ function EyeIcon({ open }) {
   )
 }
 
-function Login() {
+function Login({ onSuccess }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState('')
   const [pending, setPending] = useState(false)
-  const [signedInAs, setSignedInAs] = useState('')
 
   const hasEmailError = Boolean(errors.email)
   const hasPasswordError = Boolean(errors.password)
@@ -54,8 +53,8 @@ function Login() {
     setPending(true)
     signIn({ email: email.trim(), password })
       .then((user) => {
-        setSignedInAs(user.email)
         setPassword('')
+        onSuccess(user)
       })
       .catch((error) => {
         setFormError(error.message)
@@ -63,37 +62,6 @@ function Login() {
       .finally(() => {
         setPending(false)
       })
-  }
-
-  if (signedInAs) {
-    return (
-      <main className="auth">
-        <section className="card card--success" aria-live="polite">
-          <div className="success-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path
-                d="m5 12.5 4.5 4.5L19 7.5"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <h1>登录成功</h1>
-          <p className="subtitle">
-            已以 <strong>{signedInAs}</strong> 的身份登录。
-          </p>
-          <button
-            type="button"
-            className="submit submit--ghost"
-            onClick={() => setSignedInAs('')}
-          >
-            退出登录
-          </button>
-        </section>
-      </main>
-    )
   }
 
   return (
