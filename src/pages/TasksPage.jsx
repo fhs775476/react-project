@@ -1,18 +1,18 @@
 import { useMemo, useState } from 'react'
 import { CalendarDays, Check, CircleAlert, ListTodo, Plus } from 'lucide-react'
 import { useOutletContext } from 'react-router-dom'
-import { initialTasks } from '../data/workspace.js'
+import { initialEventTasks } from '../data/workspace.js'
 
 const filters = ['全部', '待完成', '已完成']
 
 function TasksPage() {
-  const { query } = useOutletContext()
-  const [tasks, setTasks] = useState(initialTasks)
+  const { query, can } = useOutletContext()
+  const [tasks, setTasks] = useState(initialEventTasks)
   const [filter, setFilter] = useState('全部')
   const completedCount = tasks.filter((task) => task.done).length
   const visibleTasks = useMemo(
     () => tasks.filter((task) => {
-      const matchesSearch = task.title.includes(query.trim()) || task.project.includes(query.trim())
+      const matchesSearch = task.title.includes(query.trim()) || task.event.includes(query.trim())
       const matchesFilter = filter === '全部' || (filter === '已完成' ? task.done : !task.done)
       return matchesSearch && matchesFilter
     }),
@@ -26,19 +26,19 @@ function TasksPage() {
   function addTask() {
     setTasks((current) => [
       ...current,
-      { id: Date.now(), title: '新任务', project: '个人待办', due: '待安排', priority: '中', done: false },
+      { id: Date.now(), title: '新事件任务', event: '未关联事件', due: '待安排', priority: '中', done: false },
     ])
   }
 
   return (
     <>
       <header className="page-heading">
-        <div><p className="eyebrow">工作安排</p><h1>任务</h1><p>按优先级推进任务，清楚掌握每天的工作量。</p></div>
-        <button className="primary-action" onClick={addTask}><Plus size={18} />添加任务</button>
+        <div><p className="eyebrow">事件执行</p><h1>事件任务</h1><p>跟进每个事件的准备事项，确保关键节点按时完成。</p></div>
+        {can('tasks.manage') && <button className="primary-action" onClick={addTask}><Plus size={18} />添加事件任务</button>}
       </header>
 
       <section className="task-summary-grid">
-        <article><ListTodo size={20} /><div><strong>{tasks.length}</strong><span>全部任务</span></div></article>
+        <article><ListTodo size={20} /><div><strong>{tasks.length}</strong><span>全部事件任务</span></div></article>
         <article><CircleAlert size={20} /><div><strong>{tasks.length - completedCount}</strong><span>待完成</span></div></article>
         <article><Check size={20} /><div><strong>{completedCount}</strong><span>已完成</span></div></article>
       </section>
@@ -50,12 +50,12 @@ function TasksPage() {
           </div>
           <span>{visibleTasks.length} 项任务</span>
         </div>
-        <div className="task-table-head"><span>任务</span><span>优先级</span><span>截止时间</span></div>
+        <div className="task-table-head"><span>事件任务</span><span>优先级</span><span>截止时间</span></div>
         <div className="task-page-list">
           {visibleTasks.map((task) => (
             <article className={`task-row ${task.done ? 'task-row--done' : ''}`} key={task.id}>
-              <button className="task-check" onClick={() => toggleTask(task.id)} aria-label={task.done ? `恢复${task.title}` : `完成${task.title}`}>{task.done && <Check size={14} strokeWidth={3} />}</button>
-              <div className="task-row-main"><strong>{task.title}</strong><small>{task.project}</small></div>
+              <button className="task-check" onClick={() => toggleTask(task.id)} disabled={!can('tasks.manage')} aria-label={task.done ? `恢复${task.title}` : `完成${task.title}`}>{task.done && <Check size={14} strokeWidth={3} />}</button>
+              <div className="task-row-main"><strong>{task.title}</strong><small>关联事件：{task.event}</small></div>
               <span className={`priority priority--${task.priority}`}>{task.priority}</span>
               <span className="task-date"><CalendarDays size={15} />{task.due}</span>
             </article>

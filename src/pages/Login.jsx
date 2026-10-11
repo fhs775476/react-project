@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { MIN_PASSWORD_LENGTH, signIn, validateCredentials } from '../lib/auth.js'
+import { loadSystem } from '../lib/system.js'
 
 function EyeIcon({ open }) {
   return (
@@ -25,6 +26,7 @@ function EyeIcon({ open }) {
 }
 
 function Login({ onSuccess }) {
+  const firstLogin = loadSystem().users.length === 0
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -168,7 +170,7 @@ function Login({ onSuccess }) {
           </button>
 
           <p className="hint">
-            演示账号：任意邮箱 + 密码 <code>password</code>
+            {firstLogin ? '首次使用：任意邮箱创建管理员' : '请使用管理员添加的启用账号'}，演示密码 <code>password</code>
           </p>
         </form>
       </section>

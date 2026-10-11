@@ -1,5 +1,7 @@
 export const MIN_PASSWORD_LENGTH = 8
 
+import { getUser, loadSystem } from './system.js'
+
 // 演示用的账号约定：接入真实后端后删除。
 const DEMO_PASSWORD = 'password'
 const DEMO_LATENCY = 900
@@ -11,11 +13,15 @@ const DEMO_LATENCY = 900
 export function signIn({ email, password }) {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      if (password === DEMO_PASSWORD) {
-        resolve({ email })
-      } else {
+      if (password !== DEMO_PASSWORD) {
         reject(new Error('邮箱或密码不正确，请重试。'))
+        return
       }
+      const system = loadSystem()
+      const account = getUser(system, email)
+      if (system.users.length && !account) reject(new Error('账号不存在，请联系管理员添加用户。'))
+      else if (account?.status === 'disabled') reject(new Error('账号已停用，请联系管理员。'))
+      else resolve({ email: email.trim().toLowerCase() })
     }, DEMO_LATENCY)
   })
 }

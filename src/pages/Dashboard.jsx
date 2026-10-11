@@ -2,35 +2,38 @@ import { useEffect, useState } from 'react'
 import {
   BarChart3,
   Bell,
+  CalendarRange,
   CheckSquare2,
-  FolderKanban,
   Home,
   LogOut,
   Menu,
   Moon,
   Search,
-  Settings,
+  ShieldCheck,
   Sparkles,
   Sun,
   X,
 } from 'lucide-react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { getUser, hasPermission } from '../lib/system.js'
 
 const navItems = [
-  { label: '概览', icon: Home, to: '/' },
-  { label: '项目', icon: FolderKanban, to: '/projects' },
-  { label: '任务', icon: CheckSquare2, to: '/tasks' },
-  { label: '数据', icon: BarChart3, to: '/analytics' },
+  { label: '概览', icon: Home, to: '/', permission: 'overview.view' },
+  { label: '事件记录', icon: CalendarRange, to: '/events', permission: 'events.view' },
+  { label: '事件任务', icon: CheckSquare2, to: '/event-tasks', permission: 'tasks.view' },
+  { label: '数据', icon: BarChart3, to: '/analytics', permission: 'analytics.view' },
+  { label: '系统管理', icon: ShieldCheck, to: '/system', permission: 'system.view' },
 ]
 
 const searchHints = {
-  '/': '搜索项目',
-  '/projects': '搜索项目',
-  '/tasks': '搜索任务',
+  '/': '搜索事件',
+  '/events': '搜索事件',
+  '/event-tasks': '搜索事件任务',
   '/analytics': '搜索数据',
+  '/system': '搜索用户',
 }
 
-function Dashboard({ user, onSignOut }) {
+function Dashboard({ user, system, onSignOut }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [pageQueries, setPageQueries] = useState({})
   const [theme, setTheme] = useState(() => {
@@ -40,7 +43,7 @@ function Dashboard({ user, onSignOut }) {
   })
   const location = useLocation()
   const query = pageQueries[location.pathname] ?? ''
-  const firstName = user.email.split('@')[0]
+  const firstName = getUser(system, user.email)?.name || user.email.split('@')[0]
   const initials = firstName.slice(0, 2).toUpperCase()
 
   useEffect(() => {
@@ -60,7 +63,7 @@ function Dashboard({ user, onSignOut }) {
 
         <nav className="side-nav" aria-label="主导航">
           <p className="nav-caption">工作空间</p>
-          {navItems.map(({ label, icon: Icon, to }) => (
+          {navItems.filter((item) => hasPermission(system, user.email, item.permission)).map(({ label, icon: Icon, to }) => (
             <NavLink
               key={label}
               to={to}
@@ -74,7 +77,6 @@ function Dashboard({ user, onSignOut }) {
         </nav>
 
         <div className="sidebar-bottom">
-          <button className="nav-item"><Settings size={19} /><span>设置</span></button>
           <div className="profile-mini">
             <span className="avatar">{initials}</span>
             <span className="profile-copy"><strong>{firstName}</strong><small>{user.email}</small></span>
@@ -110,7 +112,7 @@ function Dashboard({ user, onSignOut }) {
         </header>
 
         <div className="dashboard-content">
-          <Outlet context={{ query, user }} />
+          <Outlet context={{ query, user, can: (permission) => hasPermission(system, user.email, permission) }} />
         </div>
       </main>
     </div>

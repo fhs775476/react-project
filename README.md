@@ -1,16 +1,18 @@
-# React + Vite
+# Flowdesk 工作台
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React + Vite 实现的事件与任务工作台，包含概览、事件记录、事件任务、数据看板和系统管理。
 
-Currently, two official plugins are available:
+## 本地运行
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+`npm run build` 构建生产文件，`npm run lint` 运行静态检查。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 系统管理演示
 
-## Expanding the Oxlint configuration
+首次登录时，任意有效邮箱会成为管理员。演示密码是 `password`。管理员可在“系统管理”中添加用户、编辑姓名与部门、启停账号、分配角色，以及增删未使用的角色和调整权限。后续登录只能使用已添加且启用的邮箱。
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+用户和角色保存在当前浏览器的 `localStorage`，登录状态保存在 `sessionStorage`。权限只在前端执行；这是一套演示交互，不能用于真实的身份认证或安全边界。正式部署需要后端账号、密码处理、服务端权限校验和持久化存储。

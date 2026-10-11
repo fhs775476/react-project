@@ -14,7 +14,7 @@ function AnalyticsPage() {
   return (
     <>
       <header className="page-heading">
-        <div><p className="eyebrow">团队表现</p><h1>数据</h1><p>了解项目效率、投入时间与团队协作趋势。</p></div>
+        <div><p className="eyebrow">团队表现</p><h1>数据</h1><p>了解事件执行效率、投入时间与团队协作趋势。</p></div>
         <select className="period-select" aria-label="数据周期" defaultValue="本月"><option>本周</option><option>本月</option><option>本季度</option></select>
       </header>
 
@@ -40,9 +40,9 @@ function AnalyticsPage() {
         </section>
 
         <section className="chart-panel workload-panel">
-          <div className="section-heading"><div><h2>项目分布</h2><p>当前工作投入占比</p></div></div>
+          <div className="section-heading"><div><h2>事件类型分布</h2><p>当前事件投入占比</p></div></div>
           <div className="donut-wrap">
-            <div className="donut-chart"><span><strong>6</strong>个项目</span></div>
+            <div className="donut-chart"><span><strong>6</strong>个事件</span></div>
             <div className="chart-legend">
               <span><i style={{ background: '#2a9d8f' }} />产品研发 <strong>42%</strong></span>
               <span><i style={{ background: '#ed6a5a' }} />视觉设计 <strong>31%</strong></span>
@@ -56,7 +56,7 @@ function AnalyticsPage() {
       <section className="insight-strip">
         <div><span>最高效的一天</span><strong>星期四</strong><small>完成 18 项任务</small></div>
         <div><span>平均任务周期</span><strong>2.4 天</strong><small>较上月缩短 0.3 天</small></div>
-        <div><span>最活跃项目</span><strong>品牌视觉升级</strong><small>本月更新 42 次</small></div>
+        <div><span>最活跃事件</span><strong>品牌方案评审会</strong><small>本月更新 42 次</small></div>
       </section>
     </>
   )
