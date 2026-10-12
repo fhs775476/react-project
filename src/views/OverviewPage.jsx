@@ -1,3 +1,5 @@
+'use client'
+
 import { useMemo, useState } from 'react'
 import {
   ArrowUpRight,
@@ -10,12 +12,14 @@ import {
   Plus,
   Sparkles,
 } from 'lucide-react'
-import { useNavigate, useOutletContext } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
+import { useWorkspace } from '../components/WorkspaceContext.jsx'
 import { initialEventTasks, initialEvents } from '../data/workspace.js'
 
 function OverviewPage() {
-  const { query, user, can } = useOutletContext()
-  const navigate = useNavigate()
+  const { query, user, can } = useWorkspace()
+  const router = useRouter()
+  const navigate = (path) => router.push(path)
   const [tasks, setTasks] = useState(initialEventTasks.slice(0, 3))
   const firstName = user.email.split('@')[0]
   const completedCount = tasks.filter((task) => task.done).length

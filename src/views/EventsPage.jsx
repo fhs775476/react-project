@@ -1,6 +1,8 @@
+'use client'
+
 import { useEffect, useMemo, useState } from 'react'
 import { CalendarDays, CalendarRange, Clock3, MapPin, Plus, UserRound, X } from 'lucide-react'
-import { useOutletContext } from 'react-router-dom'
+import { useWorkspace } from '../components/WorkspaceContext.jsx'
 import { initialEvents } from '../data/workspace.js'
 
 const categories = ['全部', '会议', '工作', '活动', '个人']
@@ -27,7 +29,7 @@ function formatEventDate(date) {
 }
 
 function EventsPage() {
-  const { query, can } = useOutletContext()
+  const { query, can } = useWorkspace()
   const [events, setEvents] = useState(loadEvents)
   const [category, setCategory] = useState('全部')
   const [form, setForm] = useState(emptyForm)

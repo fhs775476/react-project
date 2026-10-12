@@ -1,12 +1,14 @@
+'use client'
+
 import { useMemo, useState } from 'react'
 import { CalendarDays, Check, CircleAlert, ListTodo, Plus } from 'lucide-react'
-import { useOutletContext } from 'react-router-dom'
+import { useWorkspace } from '../components/WorkspaceContext.jsx'
 import { initialEventTasks } from '../data/workspace.js'
 
 const filters = ['全部', '待完成', '已完成']
 
 function TasksPage() {
-  const { query, can } = useOutletContext()
+  const { query, can } = useWorkspace()
   const [tasks, setTasks] = useState(initialEventTasks)
   const [filter, setFilter] = useState('全部')
   const completedCount = tasks.filter((task) => task.done).length

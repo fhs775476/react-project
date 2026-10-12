@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import { MIN_PASSWORD_LENGTH, signIn, validateCredentials } from '../lib/auth.js'
 import { loadSystem } from '../lib/system.js'

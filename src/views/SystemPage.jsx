@@ -1,12 +1,14 @@
+'use client'
+
 import { useMemo, useState } from 'react'
 import { Check, Pencil, Plus, ShieldCheck, UserRound, Users, X } from 'lucide-react'
-import { useOutletContext } from 'react-router-dom'
+import { useWorkspace } from '../components/WorkspaceContext.jsx'
 import { PERMISSIONS } from '../lib/system.js'
 
 const blankUser = { name: '', email: '', department: '', roleId: 'viewer', status: 'active' }
 
 function SystemPage({ system, onChange, currentEmail }) {
-  const { query, can } = useOutletContext()
+  const { query, can } = useWorkspace()
   const editable = can('system.manage')
   const [tab, setTab] = useState('users')
   const [editingId, setEditingId] = useState(null)

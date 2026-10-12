@@ -1,6 +1,6 @@
 # Flowdesk 工作台
 
-React + Vite 实现的事件与任务工作台，包含概览、事件记录、事件任务、数据看板和系统管理。
+Next.js App Router 实现的事件与任务工作台，包含概览、事件记录、事件任务、数据看板和系统管理。
 
 ## 本地运行
 
@@ -10,6 +10,8 @@ npm run dev
 ```
 
 `npm run build` 构建生产文件，`npm run lint` 运行静态检查。
+
+路由位于 `src/app`，页面交互组件位于 `src/views`。`/projects` 和 `/tasks` 会分别重定向到 `/events` 和 `/event-tasks`。
 
 ## 系统管理演示
 

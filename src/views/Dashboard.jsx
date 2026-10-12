@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useState } from 'react'
 import {
   BarChart3,
@@ -14,8 +16,10 @@ import {
   Sun,
   X,
 } from 'lucide-react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { getUser, hasPermission } from '../lib/system.js'
+import { WorkspaceContext } from '../components/WorkspaceContext.jsx'
 
 const navItems = [
   { label: '概览', icon: Home, to: '/', permission: 'overview.view' },
@@ -33,7 +37,7 @@ const searchHints = {
   '/system': '搜索用户',
 }
 
-function Dashboard({ user, system, onSignOut }) {
+function Dashboard({ user, system, onSignOut, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [pageQueries, setPageQueries] = useState({})
   const [theme, setTheme] = useState(() => {
@@ -41,8 +45,8 @@ function Dashboard({ user, system, onSignOut }) {
     if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   })
-  const location = useLocation()
-  const query = pageQueries[location.pathname] ?? ''
+  const pathname = usePathname()
+  const query = pageQueries[pathname] ?? ''
   const firstName = getUser(system, user.email)?.name || user.email.split('@')[0]
   const initials = firstName.slice(0, 2).toUpperCase()
 
@@ -64,15 +68,15 @@ function Dashboard({ user, system, onSignOut }) {
         <nav className="side-nav" aria-label="主导航">
           <p className="nav-caption">工作空间</p>
           {navItems.filter((item) => hasPermission(system, user.email, item.permission)).map(({ label, icon: Icon, to }) => (
-            <NavLink
+            <Link
               key={label}
-              to={to}
-              end={to === '/'}
-              className={({ isActive }) => `nav-item ${isActive ? 'nav-item--active' : ''}`}
+              href={to}
+              className={`nav-item ${pathname === to ? 'nav-item--active' : ''}`}
+              aria-current={pathname === to ? 'page' : undefined}
               onClick={() => setSidebarOpen(false)}
             >
               <Icon size={19} /><span>{label}</span>
-            </NavLink>
+            </Link>
           ))}
         </nav>
 
@@ -94,8 +98,8 @@ function Dashboard({ user, system, onSignOut }) {
             <Search size={18} />
             <input
               value={query}
-              onChange={(event) => setPageQueries((current) => ({ ...current, [location.pathname]: event.target.value }))}
-              placeholder={searchHints[location.pathname] ?? '搜索'}
+              onChange={(event) => setPageQueries((current) => ({ ...current, [pathname]: event.target.value }))}
+              placeholder={searchHints[pathname] ?? '搜索'}
               aria-label="搜索当前页面"
             />
           </label>
@@ -112,7 +116,7 @@ function Dashboard({ user, system, onSignOut }) {
         </header>
 
         <div className="dashboard-content">
-          <Outlet context={{ query, user, can: (permission) => hasPermission(system, user.email, permission) }} />
+          <WorkspaceContext.Provider value={{ query, user, can: (permission) => hasPermission(system, user.email, permission) }}>{children}</WorkspaceContext.Provider>
         </div>
       </main>
     </div>
