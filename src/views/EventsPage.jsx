@@ -1,27 +1,20 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { CalendarDays, CalendarRange, Clock3, MapPin, Plus, UserRound, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { CalendarDays, CalendarRange, Clock3, MapPin, Pencil, Plus, Trash2, UserRound, X } from 'lucide-react'
+import PaginatedList from '../components/PaginatedList.jsx'
 import { useWorkspace } from '../components/WorkspaceContext.jsx'
-import { initialEvents } from '../data/workspace.js'
 
 const categories = ['全部', '会议', '工作', '活动', '个人']
+const colors = { 会议: '#ed6a5a', 工作: '#2a9d8f', 活动: '#e9a23b', 个人: '#8b6fc0' }
 const emptyForm = {
   title: '',
   category: '工作',
-  date: '2026-10-10',
+  date: '',
   time: '09:00',
   location: '',
   summary: '',
-}
-
-function loadEvents() {
-  try {
-    const savedEvents = JSON.parse(localStorage.getItem('flowdesk-events'))
-    return Array.isArray(savedEvents) && savedEvents.length ? savedEvents : initialEvents
-  } catch {
-    return initialEvents
-  }
+  status: '已计划',
 }
 
 function formatEventDate(date) {
@@ -29,15 +22,10 @@ function formatEventDate(date) {
 }
 
 function EventsPage() {
-  const { query, can } = useWorkspace()
-  const [events, setEvents] = useState(loadEvents)
+  const { query, can, events, tasks, saveEvent, deleteEvent } = useWorkspace()
   const [category, setCategory] = useState('全部')
-  const [form, setForm] = useState(emptyForm)
-  const [isCreating, setIsCreating] = useState(false)
-
-  useEffect(() => {
-    localStorage.setItem('flowdesk-events', JSON.stringify(events))
-  }, [events])
+  const [form, setForm] = useState(null)
+  const [editingId, setEditingId] = useState(null)
 
   const visibleEvents = useMemo(
     () => events
@@ -55,31 +43,39 @@ function EventsPage() {
     setForm((current) => ({ ...current, [field]: value }))
   }
 
-  function createEvent(event) {
+  function openEvent(event = null) {
+    setEditingId(event?.id ?? null)
+    setForm(event ? {
+      title: event.title, category: event.category, date: event.date, time: event.time,
+      location: event.location, summary: event.summary, status: event.status,
+    } : { ...emptyForm, date: new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10) })
+  }
+
+  function submitEvent(event) {
     event.preventDefault()
-    const colors = { 会议: '#ed6a5a', 工作: '#2a9d8f', 活动: '#e9a23b', 个人: '#8b6fc0' }
-    setEvents((current) => [
-      ...current,
-      {
-        id: Date.now(),
-        ...form,
-        title: form.title.trim(),
-        location: form.location.trim() || '待确定',
-        summary: form.summary.trim() || '暂无补充说明。',
-        status: '新建',
-        color: colors[form.category],
-        author: '我创建的',
-      },
-    ])
-    setForm(emptyForm)
-    setIsCreating(false)
+    if (!can('events.manage')) return
+    const previous = events.find((item) => item.id === editingId)
+    saveEvent({
+      ...previous, ...form, id: editingId ?? crypto.randomUUID(),
+      title: form.title.trim(), location: form.location.trim() || '待确定',
+      summary: form.summary.trim() || '暂无补充说明。',
+      color: colors[form.category], author: previous?.author ?? '我创建的',
+    })
+    setForm(null)
+  }
+
+  function removeEvent(event) {
+    if (!can('events.manage')) return
+    const relatedCount = tasks.filter((task) => String(task.eventId) === String(event.id)).length
+    const detail = relatedCount ? `，其关联的 ${relatedCount} 项任务会保留并变为未关联` : ''
+    if (window.confirm(`确定删除「${event.title}」吗${detail}？`)) deleteEvent(event.id)
   }
 
   return (
     <>
       <header className="page-heading">
         <div><p className="eyebrow">时间与动态</p><h1>事件记录</h1><p>记录重要事件，保留清晰的时间、地点和背景信息。</p></div>
-        {can('events.manage') && <button className="primary-action" onClick={() => setIsCreating(true)}><Plus size={18} />新建事件</button>}
+        {can('events.manage') && <button className="primary-action" onClick={() => openEvent()}><Plus size={18} />新建事件</button>}
       </header>
 
       <div className="event-toolbar">
@@ -89,8 +85,13 @@ function EventsPage() {
         <span>共 {visibleEvents.length} 条记录</span>
       </div>
 
-      <section className="event-list" aria-label="事件列表">
-        {visibleEvents.map((event) => (
+      <PaginatedList
+        key={`${query}:${category}`}
+        items={visibleEvents}
+        className="event-list"
+        label="事件记录"
+        emptyState={<div className="event-empty"><CalendarRange size={28} /><strong>没有找到相关事件</strong><p>调整筛选条件，或创建一条新的事件记录。</p></div>}
+        renderItem={(event) => (
           <article className="event-row" key={event.id}>
             <div className="event-date-block">
               <strong>{event.date.slice(8)}</strong>
@@ -100,7 +101,7 @@ function EventsPage() {
             <div className="event-content">
               <div className="event-title-row">
                 <div><span className="event-category" style={{ color: event.color }}>{event.category}</span><h2>{event.title}</h2></div>
-                <span className="event-status">{event.status}</span>
+                <div className="record-actions"><span className="event-status">{event.status}</span>{can('events.manage') && <><button className="icon-button" onClick={() => openEvent(event)} aria-label={`编辑${event.title}`} title="编辑事件"><Pencil size={16} /></button><button className="icon-button delete-action" onClick={() => removeEvent(event)} aria-label={`删除${event.title}`} title="删除事件"><Trash2 size={16} /></button></>}</div>
               </div>
               <p>{event.summary}</p>
               <footer className="event-meta">
@@ -111,22 +112,22 @@ function EventsPage() {
               </footer>
             </div>
           </article>
-        ))}
-        {visibleEvents.length === 0 && <div className="event-empty"><CalendarRange size={28} /><strong>没有找到相关事件</strong><p>调整筛选条件，或创建一条新的事件记录。</p></div>}
-      </section>
+        )}
+      />
 
-      {isCreating && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={() => setIsCreating(false)}>
-          <section className="event-modal" role="dialog" aria-modal="true" aria-labelledby="new-event-title" onMouseDown={(event) => event.stopPropagation()}>
-            <header><div><p className="eyebrow">添加记录</p><h2 id="new-event-title">新建事件</h2></div><button className="icon-button" onClick={() => setIsCreating(false)} aria-label="关闭"><X size={20} /></button></header>
-            <form className="event-form" onSubmit={createEvent}>
+      {form && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setForm(null)}>
+          <section className="event-modal" role="dialog" aria-modal="true" aria-labelledby="event-form-title" onMouseDown={(event) => event.stopPropagation()}>
+            <header><div><p className="eyebrow">事件记录</p><h2 id="event-form-title">{editingId === null ? '新建事件' : '编辑事件'}</h2></div><button className="icon-button" onClick={() => setForm(null)} aria-label="关闭"><X size={20} /></button></header>
+            <form className="event-form" onSubmit={submitEvent}>
               <label className="form-field form-field--full"><span>事件标题</span><input autoFocus required value={form.title} onChange={(event) => updateForm('title', event.target.value)} placeholder="例如：产品方案评审会" /></label>
               <label className="form-field"><span>事件类型</span><select value={form.category} onChange={(event) => updateForm('category', event.target.value)}>{categories.slice(1).map((item) => <option key={item}>{item}</option>)}</select></label>
               <label className="form-field"><span>日期</span><input required type="date" value={form.date} onChange={(event) => updateForm('date', event.target.value)} /></label>
               <label className="form-field"><span>时间</span><input required type="time" value={form.time} onChange={(event) => updateForm('time', event.target.value)} /></label>
               <label className="form-field"><span>地点</span><input value={form.location} onChange={(event) => updateForm('location', event.target.value)} placeholder="线上或具体地点" /></label>
               <label className="form-field form-field--full"><span>事件说明</span><textarea rows="4" value={form.summary} onChange={(event) => updateForm('summary', event.target.value)} placeholder="补充事件背景、目标或相关信息" /></label>
-              <div className="modal-actions form-field--full"><button type="button" className="secondary-action" onClick={() => setIsCreating(false)}>取消</button><button type="submit" className="primary-action">创建事件</button></div>
+              <label className="form-field"><span>状态</span><select value={form.status} onChange={(event) => updateForm('status', event.target.value)}><option>新建</option><option>已计划</option><option>待确认</option><option>即将开始</option><option>已完成</option><option>已取消</option></select></label>
+              <div className="modal-actions form-field--full"><button type="button" className="secondary-action" onClick={() => setForm(null)}>取消</button><button type="submit" className="primary-action">保存事件</button></div>
             </form>
           </section>
         </div>

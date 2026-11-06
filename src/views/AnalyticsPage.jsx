@@ -1,4 +1,9 @@
+'use client'
+
+import { useMemo } from 'react'
 import { ArrowDownRight, ArrowUpRight, CheckCircle2, Clock3, Target, Users } from 'lucide-react'
+import EChart from '../components/EChart.jsx'
+import { useWorkspace } from '../components/WorkspaceContext.jsx'
 
 const weeklyData = [
   { day: '周一', value: 62 },
@@ -9,8 +14,45 @@ const weeklyData = [
   { day: '周六', value: 36 },
   { day: '周日', value: 48 },
 ]
+const weeklyAverage = Math.round(weeklyData.reduce((total, item) => total + item.value, 0) / weeklyData.length)
+
+const eventTypes = [
+  { name: '会议', color: '#ed6a5a' },
+  { name: '工作', color: '#2a9d8f' },
+  { name: '活动', color: '#e9a23b' },
+  { name: '个人', color: '#8b6fc0' },
+]
 
 function AnalyticsPage() {
+  const { events, theme } = useWorkspace()
+  const dark = theme === 'dark'
+  const ink = dark ? '#ecf2ef' : '#18201d'
+  const muted = dark ? '#9ba8a2' : '#68716d'
+  const line = dark ? '#2b3932' : '#dde2de'
+  const surface = dark ? '#18221d' : '#ffffff'
+  const green = dark ? '#6fc59d' : '#205b45'
+
+  const typeData = useMemo(() => eventTypes.map((type) => ({
+    ...type,
+    value: events.filter((event) => event.category === type.name).length,
+  })), [events])
+
+  const barOption = useMemo(() => ({
+    animationDuration: 450,
+    grid: { left: 8, right: 8, top: 26, bottom: 8, containLabel: true },
+    tooltip: { trigger: 'axis', valueFormatter: (value) => `${value}%`, backgroundColor: surface, borderColor: line, textStyle: { color: ink } },
+    xAxis: { type: 'category', data: weeklyData.map((item) => item.day), axisTick: { show: false }, axisLine: { lineStyle: { color: line } }, axisLabel: { color: muted } },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: muted, formatter: '{value}%' }, axisLine: { show: false }, splitLine: { lineStyle: { color: line } } },
+    series: [{ type: 'bar', data: weeklyData.map((item) => item.value), barMaxWidth: 38, itemStyle: { color: green, borderRadius: [5, 5, 0, 0] }, label: { show: true, position: 'top', formatter: '{c}%', color: muted, fontSize: 11 } }],
+  }), [green, ink, line, muted, surface])
+
+  const pieOption = useMemo(() => ({
+    animationDuration: 450,
+    color: eventTypes.map((type) => type.color),
+    tooltip: { trigger: 'item', formatter: '{b}: {c} 个 ({d}%)', backgroundColor: surface, borderColor: line, textStyle: { color: ink } },
+    series: [{ type: 'pie', radius: ['57%', '78%'], center: ['50%', '50%'], avoidLabelOverlap: false, label: { show: false }, labelLine: { show: false }, itemStyle: { borderColor: surface, borderWidth: 3 }, data: events.length ? typeData.filter((type) => type.value > 0).map((type) => ({ name: type.name, value: type.value, itemStyle: { color: type.color } })) : [{ name: '暂无事件', value: 1, itemStyle: { color: line } }] }],
+  }), [events.length, ink, line, surface, typeData])
+
   return (
     <>
       <header className="page-heading">
@@ -27,27 +69,19 @@ function AnalyticsPage() {
 
       <div className="analytics-grid">
         <section className="chart-panel">
-          <div className="section-heading"><div><h2>工作效率趋势</h2><p>每日完成任务比例</p></div><span className="chart-total">本周 72%</span></div>
-          <div className="bar-chart" aria-label="本周每日工作效率柱状图">
-            {weeklyData.map((item) => (
-              <div className="bar-column" key={item.day}>
-                <span className="bar-value">{item.value}%</span>
-                <div className="bar-track"><span style={{ height: `${item.value}%` }} /></div>
-                <small>{item.day}</small>
-              </div>
-            ))}
-          </div>
+          <div className="section-heading"><div><h2>工作效率趋势</h2><p>每日完成任务比例 · 演示数据</p></div><span className="chart-total">本周均值 {weeklyAverage}%</span></div>
+          <EChart option={barOption} className="efficiency-chart" label="本周每日工作效率柱状图" />
         </section>
 
         <section className="chart-panel workload-panel">
-          <div className="section-heading"><div><h2>事件类型分布</h2><p>当前事件投入占比</p></div></div>
+          <div className="section-heading"><div><h2>事件类型分布</h2><p>当前事件记录占比</p></div></div>
           <div className="donut-wrap">
-            <div className="donut-chart"><span><strong>6</strong>个事件</span></div>
+            <div className="donut-visual">
+              <EChart option={pieOption} className="event-type-chart" label="当前事件类型占比圆环图" />
+              <span className="donut-center"><strong>{events.length}</strong>个事件</span>
+            </div>
             <div className="chart-legend">
-              <span><i style={{ background: '#2a9d8f' }} />产品研发 <strong>42%</strong></span>
-              <span><i style={{ background: '#ed6a5a' }} />视觉设计 <strong>31%</strong></span>
-              <span><i style={{ background: '#e9a23b' }} />内容运营 <strong>17%</strong></span>
-              <span><i style={{ background: '#8b6fc0' }} />用户研究 <strong>10%</strong></span>
+              {typeData.map((type) => <span key={type.name}><i style={{ background: type.color }} />{type.name}<strong>{events.length ? Math.round(type.value / events.length * 100) : 0}%</strong></span>)}
             </div>
           </div>
         </section>

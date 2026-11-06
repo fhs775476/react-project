@@ -19,6 +19,7 @@ import {
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { getUser, hasPermission } from '../lib/system.js'
+import { loadWorkspace, getTaskEventName } from '../lib/workspace.js'
 import { WorkspaceContext } from '../components/WorkspaceContext.jsx'
 
 const navItems = [
@@ -40,6 +41,7 @@ const searchHints = {
 function Dashboard({ user, system, onSignOut, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [pageQueries, setPageQueries] = useState({})
+  const [workspace, setWorkspace] = useState(loadWorkspace)
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('flowdesk-theme')
     if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme
@@ -55,6 +57,44 @@ function Dashboard({ user, system, onSignOut, children }) {
     document.documentElement.style.colorScheme = theme
     localStorage.setItem('flowdesk-theme', theme)
   }, [theme])
+
+  useEffect(() => {
+    localStorage.setItem('flowdesk-events', JSON.stringify(workspace.events))
+    localStorage.setItem('flowdesk-tasks', JSON.stringify(workspace.tasks))
+  }, [workspace])
+
+  function saveEvent(event) {
+    setWorkspace((current) => ({
+      ...current,
+      events: current.events.some((item) => item.id === event.id)
+        ? current.events.map((item) => item.id === event.id ? event : item)
+        : [...current.events, event],
+    }))
+  }
+
+  function deleteEvent(id) {
+    setWorkspace((current) => ({
+      events: current.events.filter((event) => event.id !== id),
+      tasks: current.tasks.map((task) => String(task.eventId) === String(id) ? { ...task, eventId: null } : task),
+    }))
+  }
+
+  function saveTask(task) {
+    setWorkspace((current) => ({
+      ...current,
+      tasks: current.tasks.some((item) => item.id === task.id)
+        ? current.tasks.map((item) => item.id === task.id ? task : item)
+        : [...current.tasks, task],
+    }))
+  }
+
+  function deleteTask(id) {
+    setWorkspace((current) => ({ ...current, tasks: current.tasks.filter((task) => task.id !== id) }))
+  }
+
+  function toggleTask(id) {
+    setWorkspace((current) => ({ ...current, tasks: current.tasks.map((task) => task.id === id ? { ...task, done: !task.done } : task) }))
+  }
 
   return (
     <div className="dashboard-shell">
@@ -116,7 +156,12 @@ function Dashboard({ user, system, onSignOut, children }) {
         </header>
 
         <div className="dashboard-content">
-          <WorkspaceContext.Provider value={{ query, user, can: (permission) => hasPermission(system, user.email, permission) }}>{children}</WorkspaceContext.Provider>
+          <WorkspaceContext.Provider value={{
+            query, user, theme,
+            can: (permission) => hasPermission(system, user.email, permission),
+            ...workspace, saveEvent, deleteEvent, saveTask, deleteTask, toggleTask,
+            getTaskEventName: (task) => getTaskEventName(task, workspace.events),
+          }}>{children}</WorkspaceContext.Provider>
         </div>
       </main>
     </div>

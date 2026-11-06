@@ -1,0 +1,7 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python",
+  "python-envs.workspaceSearchPaths": [
+    "./backend/.venv"
+  ],
+  "python-envs.pythonProjects": []
+}
